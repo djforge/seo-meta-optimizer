@@ -1,0 +1,8 @@
+{
+  "name": "seo-meta-optimizer",
+  "description": "Optimize title tags and meta descriptions for SEO. Grammar-aware truncation, duplicate detection, and bulk CSV processing.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Jordan Chavis"
+  }
+}
