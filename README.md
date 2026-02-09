@@ -1,6 +1,6 @@
 # seo-meta-optimizer
 
-A Claude Code plugin that optimizes title tags and meta descriptions for SEO at scale.
+A Claude Code skill that optimizes title tags and meta descriptions for SEO at scale.
 
 ## What it does
 
@@ -16,15 +16,27 @@ Give it a website URL or CSV export and it will:
 
 ## Install
 
-```bash
-claude /plugin install djforge/seo-meta-optimizer
-```
+Clone the repo and copy the skill files into your Claude Code commands directory:
 
-Or test locally:
+**Global install** (available in all projects):
 
 ```bash
-claude --plugin-dir /path/to/seo-meta-optimizer
+git clone https://github.com/djforge/seo-meta-optimizer.git
+mkdir -p ~/.claude/commands
+cp seo-meta-optimizer/skills/optimize-meta-tags/SKILL.md ~/.claude/commands/optimize-meta-tags.md
+cat seo-meta-optimizer/skills/optimize-meta-tags/reference.md >> ~/.claude/commands/optimize-meta-tags.md
 ```
+
+**Per-project install** (available only in a specific project):
+
+```bash
+git clone https://github.com/djforge/seo-meta-optimizer.git
+mkdir -p .claude/commands
+cp seo-meta-optimizer/skills/optimize-meta-tags/SKILL.md .claude/commands/optimize-meta-tags.md
+cat seo-meta-optimizer/skills/optimize-meta-tags/reference.md >> .claude/commands/optimize-meta-tags.md
+```
+
+After installing, restart Claude Code. The `/optimize-meta-tags` command will be available.
 
 ## Usage
 
@@ -50,17 +62,17 @@ The skill will ask for:
 
 A CSV file with columns:
 
-| Column | Description |
-|--------|-------------|
-| URL | Page URL |
-| Page_Type | website, blog, docs, learn, etc. |
-| Organic_Traffic | From audit data (0 if unavailable) |
-| Current_Title | Original title tag |
-| Optimized_Title | New title tag |
-| Title_Changed | YES or NO |
-| Current_Meta | Original meta description |
-| Optimized_Meta | New meta description |
-| Meta_Changed | YES or NO |
+| Column           | Description                        |
+| ---------------- | ---------------------------------- |
+| URL              | Page URL                           |
+| Page\_Type       | website, blog, docs, learn, etc.   |
+| Organic\_Traffic | From audit data (0 if unavailable) |
+| Current\_Title   | Original title tag                 |
+| Optimized\_Title | New title tag                      |
+| Title\_Changed   | YES or NO                          |
+| Current\_Meta    | Original meta description          |
+| Optimized\_Meta  | New meta description               |
+| Meta\_Changed    | YES or NO                          |
 
 Plus optional split by section (website, blog, docs, learn) in a `by_section/` subfolder.
 
@@ -68,7 +80,7 @@ Plus optional split by section (website, blog, docs, learn) in a `by_section/` s
 
 Every run ends with a validation report targeting **0 issues** across:
 
-- Title length violations (>60 chars)
+- Title length violations (\>60 chars)
 - Meta length violations (<120 or >160 chars)
 - Grammar issues (30+ checks)
 - Duplicate titles
