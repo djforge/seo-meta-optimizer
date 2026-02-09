@@ -16,7 +16,7 @@ Give it your site's meta tag data (CSV exports from Ahrefs, Screaming Frog, or y
 ## Install
 
 ```bash
-claude /plugin install jordanchavis/seo-meta-optimizer
+claude /plugin install djforge/seo-meta-optimizer
 ```
 
 Or test locally:
