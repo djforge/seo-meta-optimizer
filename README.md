@@ -34,7 +34,8 @@ claude --plugin-dir /path/to/seo-meta-optimizer
 The skill will ask for:
 1. Your **brand name** (e.g., "Acme Corp") for the title suffix
 2. A **one-line brand description** for generating meta descriptions
-3. Any **audit CSVs** (nice-to-have — Ahrefs, Screaming Frog, etc. for organic traffic data and pre-flagged issues)
+3. Your **website URL** (optional — fetched for brand voice and positioning context)
+4. Any **audit CSVs** (nice-to-have — Ahrefs, Screaming Frog, etc. for organic traffic data and pre-flagged issues)
 
 ## Output
 
