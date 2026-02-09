@@ -1,0 +1,11 @@
+URL,Title,Title Length,Meta description,Meta description length
+https://example.com/,Example Corp - The Best Platform for Building Modern Applications and Scaling Your Infrastructure,93,Short meta.,12
+https://example.com/blog/getting-started-with-postgresql,Understanding How to Get Started with PostgreSQL: A Comprehensive Guide for Developers and Engineers,100,Learn how to get started with PostgreSQL.,40
+https://example.com/docs/api/query,Example Corp Documentation,26,,0
+https://example.com/blog/scaling-databases,Scaling Databases in Production: Best Practices for Performance and Reliability in Modern Cloud-Native Applications,112,"Learn how to scale databases in production with best practices for performance, reliability, and cost optimization. This comprehensive guide covers horizontal scaling, read replicas, connection pooling, and more.",207
+https://example.com/learn/time-series,Time-Series Data Explained,26,A guide to time-series data.,29
+https://example.com/docs/keywords/kubernetes,Example Corp Documentation,26,,0
+https://example.com/docs/keywords/aws,Example Corp Documentation,26,,0
+https://example.com/legal/privacy,Example Corp - Privacy Policy,30,Example Corp website.,22
+https://example.com/blog/monitoring-infrastructure,How to Monitor Your Infrastructure with Grafana and Prometheus for,67,Monitor your infrastructure.,28
+https://example.com/pricing,Example Corp - Plans and Pricing for Teams and Enterprise Organizations Worldwide,80,"Choose the right plan for your team. Example Corp offers flexible pricing for startups, growing teams, and enterprise organizations.",128

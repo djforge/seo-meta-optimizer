@@ -4,8 +4,9 @@ A Claude Code plugin that optimizes title tags and meta descriptions for SEO at 
 
 ## What it does
 
-Give it your site's meta tag data (CSV exports from Ahrefs, Screaming Frog, or your CMS) and it will:
+Give it a website URL or CSV export and it will:
 
+- **Crawl your site** — automatically extract all current titles and meta descriptions via sitemap or link crawling
 - **Fix title tags** — shorten to ≤60 characters using grammar-aware truncation
 - **Fix meta descriptions** — expand short ones and trim long ones to the 120-160 character sweet spot
 - **Detect grammar issues** — trailing commas, dangling prepositions, unclosed parentheses, incomplete clauses
@@ -27,6 +28,14 @@ claude --plugin-dir /path/to/seo-meta-optimizer
 
 ## Usage
 
+From a website URL (crawls the site automatically):
+
+```
+/optimize-meta-tags https://example.com
+```
+
+Or from a CSV export:
+
 ```
 /optimize-meta-tags path/to/your-meta-tags.csv
 ```
@@ -34,7 +43,7 @@ claude --plugin-dir /path/to/seo-meta-optimizer
 The skill will ask for:
 1. Your **brand name** (e.g., "Acme Corp") for the title suffix
 2. A **one-line brand description** for generating meta descriptions
-3. Your **website URL** (optional — fetched for brand voice and positioning context)
+3. Your **website URL** (if not already provided — fetched for brand voice and positioning context)
 4. Any **audit CSVs** (nice-to-have — Ahrefs, Screaming Frog, etc. for organic traffic data and pre-flagged issues)
 
 ## Output

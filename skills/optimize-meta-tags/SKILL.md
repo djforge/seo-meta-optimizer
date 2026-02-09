@@ -1,8 +1,8 @@
 ---
 name: optimize-meta-tags
-description: Optimize title tags and meta descriptions for SEO from CSV data. Use when the user wants to fix title lengths, meta description lengths, grammar issues, or duplicates across their website pages.
+description: Optimize title tags and meta descriptions for SEO. Can crawl a website to extract current tags, or work from CSV exports. Use when the user wants to fix title lengths, meta description lengths, grammar issues, or duplicates across their website pages.
 user-invocable: true
-argument-hint: "[path to CSV file(s)]"
+argument-hint: "[website URL or path to CSV file(s)]"
 ---
 
 # SEO Meta Tag Optimizer
@@ -11,13 +11,15 @@ You are an SEO meta tag optimization expert. Your job is to take the user's exis
 
 ## Input
 
-The user will provide one or more CSV files. Ask for the following if not provided:
+The user can provide **either** a website URL (to crawl) or CSV files (pre-exported data). Ask for the following if not provided:
 
-1. **Page data** — CSV with columns like: URL, Title, Title Length, Description, Description Length (or similar)
+1. **Website URL or Page data CSV** — Either:
+   - A website URL to crawl (e.g., `https://example.com`) — the skill will extract all titles and meta descriptions automatically
+   - A CSV with columns like: URL, Title, Title Length, Description, Description Length (or similar)
 2. **Audit data** (nice-to-have) — Ahrefs, Screaming Frog, or similar exports flagging pages with issues and providing organic traffic data
 3. **Brand name** — The brand suffix to append to titles (e.g., " | Acme Corp")
 4. **Brand context** — A one-line description of what the company does (used for generating meta descriptions)
-5. **Website URL** (optional) — The brand's homepage URL. If provided, fetch it to understand brand voice, products, positioning, and target audience for more specific and on-brand meta descriptions
+5. **Website URL** (if not already provided above) — The brand's homepage URL. Fetch it to understand brand voice, products, positioning, and target audience for more specific and on-brand meta descriptions
 
 ## Target Constraints
 
@@ -29,6 +31,25 @@ The user will provide one or more CSV files. Ask for the following if not provid
 ## Process
 
 Write a Python script that:
+
+### 0. Crawl website (if URL provided instead of CSV)
+
+If the user provides a website URL instead of a CSV file, crawl the site to extract current titles and meta descriptions:
+
+1. **Discover URLs via sitemap** — Fetch `sitemap.xml` (and any nested sitemap indexes) to get the full list of pages. Common locations to check:
+   - `https://example.com/sitemap.xml`
+   - `https://example.com/sitemap_index.xml`
+   - Check `robots.txt` for sitemap directives
+2. **Fall back to crawling** — If no sitemap exists, start from the homepage and follow internal links (same domain only), up to a reasonable limit (e.g., 500 pages)
+3. **Extract meta tags from each page** — For each URL, fetch the HTML and parse:
+   - `<title>` tag content
+   - `<meta name="description" content="...">` tag content
+   - Respect `robots` meta tags (skip `noindex` pages)
+4. **Rate limiting** — Add a small delay between requests (0.5-1s) to avoid overwhelming the server. Use a session with connection pooling for efficiency.
+5. **Output a CSV** — Save the crawled data as `crawled_meta_tags.csv` with columns: `URL, Title, Title Length, Meta description, Meta description length`
+6. **Report crawl results** — Print total pages found, pages crawled, pages with missing titles, pages with missing metas
+
+Then continue with the optimization process below using this CSV as input.
 
 ### 1. Parse all input data sources
 
