@@ -1,6 +1,6 @@
 ---
 name: optimize-meta-tags
-description: Optimize title tags and meta descriptions for SEO. Can crawl a website to extract current tags, or work from CSV exports. Use when the user wants to fix title lengths, meta description lengths, grammar issues, or duplicates across their website pages.
+description: Optimize title tags, meta descriptions, and JSON-LD structured data for SEO. Can crawl a website to extract current tags and schema markup, or work from CSV exports. Use when the user wants to fix title lengths, meta description lengths, grammar issues, duplicates, or generate/audit JSON-LD schema markup across their website pages.
 user-invocable: true
 argument-hint: "[website URL or path to CSV file(s)]"
 ---
@@ -20,6 +20,7 @@ The user can provide **either** a website URL (to crawl) or CSV files (pre-expor
 3. **Brand name** — The brand suffix to append to titles (e.g., " | Acme Corp")
 4. **Brand context** — A one-line description of what the company does (used for generating meta descriptions)
 5. **Website URL** (if not already provided above) — The brand's homepage URL. Fetch it to understand brand voice, products, positioning, and target audience for more specific and on-brand meta descriptions
+6. **JSON-LD audit data** (optional) — Existing JSON-LD validation output from Google Rich Results Test, Schema.org validator, or manual exports. If not provided, the crawl step will extract existing `<script type="application/ld+json">` blocks automatically
 
 ## Target Constraints
 
@@ -27,6 +28,8 @@ The user can provide **either** a website URL (to crawl) or CSV files (pre-expor
 |---------|-----|-----|-------|
 | Title tag | — | 60 chars | Primary keyword near front |
 | Meta description | 120 chars | 160 chars | Compelling, action-oriented |
+| JSON-LD `headline` | — | 110 chars | Google recommendation for Article/BlogPosting |
+| JSON-LD | — | — | Must pass schema.org validation; required fields per `@type` (see section 7) |
 
 ## Process
 
@@ -41,13 +44,19 @@ If the user provides a website URL instead of a CSV file, crawl the site to extr
    - `https://example.com/sitemap_index.xml`
    - Check `robots.txt` for sitemap directives
 2. **Fall back to crawling** — If no sitemap exists, start from the homepage and follow internal links (same domain only), up to a reasonable limit (e.g., 500 pages)
-3. **Extract meta tags from each page** — For each URL, fetch the HTML and parse:
+3. **Extract meta tags and JSON-LD from each page** — For each URL, fetch the HTML and parse:
    - `<title>` tag content
    - `<meta name="description" content="...">` tag content
+   - All `<script type="application/ld+json">` blocks — store raw JSON-LD per page
    - Respect `robots` meta tags (skip `noindex` pages)
-4. **Rate limiting** — Add a small delay between requests (0.5-1s) to avoid overwhelming the server. Use a session with connection pooling for efficiency.
-5. **Output a CSV** — Save the crawled data as `crawled_meta_tags.csv` with columns: `URL, Title, Title Length, Meta description, Meta description length`
-6. **Report crawl results** — Print total pages found, pages crawled, pages with missing titles, pages with missing metas
+4. **Flag JSON-LD issues** — For each page, detect:
+   - Missing JSON-LD entirely (no `<script type="application/ld+json">` found)
+   - Invalid JSON (parse errors in existing blocks)
+   - Wrong `@type` for the page type (e.g., `WebPage` on a blog post instead of `BlogPosting`)
+   - Missing required properties for the declared `@type`
+5. **Rate limiting** — Add a small delay between requests (0.5-1s) to avoid overwhelming the server. Use a session with connection pooling for efficiency.
+6. **Output a CSV** — Save the crawled data as `crawled_meta_tags.csv` with columns: `URL, Title, Title Length, Meta description, Meta description length, JSON-LD_Present, JSON-LD_Valid, JSON-LD_Types`
+7. **Report crawl results** — Print total pages found, pages crawled, pages with missing titles, pages with missing metas, pages with missing JSON-LD, pages with invalid JSON-LD
 
 Then continue with the optimization process below using this CSV as input.
 
@@ -148,15 +157,72 @@ Maintain a mapping for proper casing of technology terms. Common patterns:
 
 When extracting keywords from URLs, always apply this mapping before using in titles/metas.
 
+### 7. Generate JSON-LD schema markup
+
+For each page, generate appropriate JSON-LD structured data based on page type. If the page already has valid, correct JSON-LD, preserve it and mark as `unchanged`. If existing JSON-LD is present but incomplete or uses the wrong type, improve it and mark as `improved`. If no JSON-LD exists, generate it and mark as `generated`.
+
+**Schema type mapping by page type:**
+
+| Page Type | Schema `@type` | Key Properties |
+|-----------|---------------|----------------|
+| Homepage | `WebSite` + `Person`/`Organization` | name, url, description, sameAs, potentialAction (SearchAction) |
+| Blog index | `CollectionPage` + `Blog` | name, description, url, blogPost references |
+| Blog post | `BlogPosting` (or `Article`) | headline, description, author, datePublished, dateModified, image, publisher |
+| Author page | `ProfilePage` + `Person` | name, url, description, sameAs |
+| Tag page | `CollectionPage` | name, description, url, mainEntity (ItemList) |
+| Generic page | `WebPage` | name, description, url |
+| About page | `AboutPage` + `Person` | name, description, url, knowsAbout, jobTitle |
+| Contact page | `ContactPage` | name, description, url |
+
+**Generation rules:**
+
+- Use optimized title for `name`/`headline` (without brand suffix)
+- Use optimized meta description for `description`
+- Extract `datePublished`/`dateModified` from sitemap `lastmod` or page HTML (look for `<time>` elements, `datePublished` meta tags, or article markup)
+- Extract author info from crawled author pages (name, URL, social links for `sameAs`)
+- Generate `BreadcrumbList` for all pages based on URL structure (e.g., `/blog/my-post/` → Home > Blog > My Post)
+- Use page URL for `url` and `mainEntityOfPage`
+- Set `@context` to `https://schema.org`
+- For `Person`/`Organization` on homepage, pull name, description, and social links from the page content
+- For `BlogPosting`, set `publisher` to the site's `Organization` or `Person` entity
+
+**Validation checks on generated JSON-LD:**
+
+- Valid JSON parse
+- Required `@context` and `@type` present
+- `headline` ≤ 110 chars (Google recommendation for Article/BlogPosting)
+- `description` present and non-empty
+- `datePublished` in ISO 8601 format when present
+- `author` has `@type` and `name` when present
+- `image` present for `BlogPosting` (flag as warning if missing, don't fail)
+- No duplicate `@type` declarations across `<script>` blocks on the same page
+- `url` matches the canonical page URL
+- `BreadcrumbList` has correct `itemListElement` structure with `position`, `name`, and `item`
+
 ## Output
 
 Generate a CSV file with these columns:
 
 ```
-URL, Page_Type, Organic_Traffic, Issues, Current_Title, Current_Title_Length, Optimized_Title, Optimized_Title_Length, Title_Changed, Current_Meta, Current_Meta_Length, Optimized_Meta, Optimized_Meta_Length, Meta_Changed
+URL, Page_Type, Organic_Traffic, Issues, Current_Title, Current_Title_Length, Optimized_Title, Optimized_Title_Length, Title_Changed, Current_Meta, Current_Meta_Length, Optimized_Meta, Optimized_Meta_Length, Meta_Changed, JSON-LD_Status
 ```
 
-Sort by organic traffic descending. Mark `Title_Changed` and `Meta_Changed` as YES/NO.
+Sort by organic traffic descending. Mark `Title_Changed` and `Meta_Changed` as YES/NO. Set `JSON-LD_Status` to `generated` (new JSON-LD created), `improved` (existing JSON-LD fixed/enhanced), or `unchanged` (existing JSON-LD was already correct).
+
+Also generate a `schema_markup.json` file mapping each URL to its JSON-LD object(s):
+
+```json
+{
+  "https://example.com/": [
+    { "@context": "https://schema.org", "@type": "WebSite", "name": "...", "url": "..." },
+    { "@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [...] }
+  ],
+  "https://example.com/blog/my-post/": [
+    { "@context": "https://schema.org", "@type": "BlogPosting", "headline": "...", "author": {...} },
+    { "@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [...] }
+  ]
+}
+```
 
 Also offer to split into separate CSVs by page type (website, blog, learn, docs, etc.) in a `by_section/` subfolder.
 
@@ -172,8 +238,17 @@ After generating the output, run a validation pass and print:
 - Meta grammar issues
 - Duplicate titles (groups + URLs)
 - Duplicate metas (groups + URLs)
+- **JSON-LD metrics:**
+  - Pages with JSON-LD generated (new)
+  - Pages with existing JSON-LD improved
+  - Pages with JSON-LD unchanged
+  - JSON-LD validation errors (invalid JSON, missing `@context`/`@type`, missing required fields)
+  - Schema type coverage (% of pages with appropriate schema for their page type)
+  - Missing recommended fields — warnings, not errors (e.g., `image` on BlogPosting, `sameAs` on Person)
+  - `headline` length violations (>110 chars)
+  - Duplicate `@type` declarations (same type in multiple script blocks on one page)
 
-**Target: 0 issues across all checks.**
+**Target: 0 errors across all checks.** Warnings (missing recommended fields) are reported but do not block.
 
 If any issues remain, fix them iteratively until all checks pass.
 
